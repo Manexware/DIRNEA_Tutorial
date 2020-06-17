@@ -18,7 +18,8 @@ public class Employee extends RepresentationModel<Employee> {
     private String name;
     private String role;
 
-    @JsonCreator //{"nombre": "-----", "cargo": "---"}
+    //{"name": "Luis Perez","role":"student"} ---> json original
+    @JsonCreator //{"nombre": "Luis Perez", "cargo": "student"} ---> json final
     public Employee(@JsonProperty("nombre") String name, @JsonProperty("cargo") String role) {
         this.name = name;
         this.role = role;

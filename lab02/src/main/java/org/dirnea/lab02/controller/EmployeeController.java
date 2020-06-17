@@ -3,11 +3,19 @@ package org.dirnea.lab02.controller;
 import org.dirnea.lab02.model.Employee;
 import org.dirnea.lab02.repository.EmployeeRepository;
 import org.dirnea.lab02.util.EmployeeNotFoundException;
+
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.*;
 
+
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 
 @RestController
 public class EmployeeController {
@@ -21,7 +29,13 @@ public class EmployeeController {
     // http://localohots:8080/employees
     @GetMapping("/employees")
     List<Employee> all() {
-        return repository.findAll();
+        List<Employee> employees = repository.findAll();
+        for(final Employee employee : employees){
+            Link link = linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel();
+            employee.add(link);
+        }
+
+        return  employees ;//repository.findAll();
     }
 
     @PostMapping("/employees")
@@ -33,13 +47,24 @@ public class EmployeeController {
     // http://localohots:8080/employees/4
     @GetMapping("/employees/{id}")
     Employee one(@PathVariable Long id) {
-
-        Employee employee = repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
-        Link link = new Link("http://localhost:8088/employees/" + employee.getId());
-        employee.add(link);
-        return employee;
         //{ "id": 1, "name":"Manuel Vega", "role":"Instructor"}
-        // return repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
+        // utilizando los mensaje de HTTP
+        Optional<Employee> employee = repository.findById(id);
+
+        Link link = linkTo(methodOn(EmployeeController.class).one(employee.get().getId())).withSelfRel();
+        employee.get().add(link);
+        link = linkTo(methodOn(EmployeeController.class).all()).withRel("todos");
+        employee.get().add(link);
+         return  employee.get();
+         //utilizando mis propiios mensaje a las excepciones
+//        Employee employee = repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
+//
+//        Link link = linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel();
+//        employee.add(link);
+//        link = linkTo(methodOn(EmployeeController.class).all()).withRel("todos");
+//        employee.add(link);
+//        return  employee;
+
     }
 
     // employee ---> objeto, tiene unos atributos : id, name y role
