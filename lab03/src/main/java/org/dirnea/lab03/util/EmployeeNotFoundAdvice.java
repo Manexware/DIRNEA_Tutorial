@@ -1,4 +1,4 @@
-package org.dirnea.lab02.util;
+package org.dirnea.lab03.util;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;

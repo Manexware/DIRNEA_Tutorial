@@ -1,24 +1,30 @@
-package org.dirnea.lab02.controller;
+package org.dirnea.lab04.controller;
 
-import org.dirnea.lab02.model.Employee;
-import org.dirnea.lab02.repository.EmployeeRepository;
-import org.dirnea.lab02.util.EmployeeNotFoundException;
-
-import org.springframework.hateoas.CollectionModel;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.dirnea.lab04.exception.EntityNotFoundException;
+import org.dirnea.lab04.model.Employee;
+import org.dirnea.lab04.repository.EmployeeRepository;
 import org.springframework.hateoas.Link;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 
 @RestController
+@Tag(name = "Empleado")
+
 public class EmployeeController {
+
     private final EmployeeRepository repository;
 
     public EmployeeController(EmployeeRepository repository) {
@@ -27,18 +33,24 @@ public class EmployeeController {
 
     // Aggregate root
     // http://localohots:8080/employees
+    @Operation(description = "Listar todos los empleados", responses = {
+            @ApiResponse(content = @Content(array = @ArraySchema(schema = @Schema(implementation = Employee.class))), responseCode = "200"),
+            @ApiResponse(responseCode = "404", description = "No hay empleados")})
     @GetMapping("/employees")
     List<Employee> all() {
         List<Employee> employees = repository.findAll();
-        for(final Employee employee : employees){
+        for (final Employee employee : employees) {
             Link link = linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel();
             employee.add(link);
         }
 
-        return  employees ;//repository.findAll();
+        return employees;//repository.findAll();
     }
 
     @PostMapping("/employees")
+    @Operation(description = "Crear un nuevo empleado", responses = {
+            @ApiResponse(content = @Content(schema = @Schema(implementation = Employee.class), mediaType = MediaType.APPLICATION_JSON_VALUE), headers = @Header(name = "Empleado"), responseCode = "201"),
+            @ApiResponse(responseCode = "409", description = "El empleado ya existe") })
     Employee newEmployee(@RequestBody Employee employee) {
         return repository.save(employee);
     }
@@ -54,9 +66,9 @@ public class EmployeeController {
 //        employee.get().add(link);
 //        link = linkTo(methodOn(EmployeeController.class).all()).withRel("todos");
 //        employee.get().add(link);
-//         return  employee.get();
-         //utilizando mis propiios mensaje a las excepciones
-        Employee employee = repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
+//        return employee.get();
+        //utilizando mis propiios mensaje a las excepciones
+        Employee employee = repository.findById(id).orElseThrow(() -> new EntityNotFoundException(Employee.class, "id", id.toString()));
         Link link = linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel();
         employee.add(link);
         link = linkTo(methodOn(EmployeeController.class).all()).withRel("todos");
@@ -84,6 +96,9 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/employees/{id}")
+    @Operation(description = "Borrar un empleado", responses = {
+            @ApiResponse(responseCode = "204", description = "PEl empleado fue borrado"),
+            @ApiResponse(responseCode = "404", description = "Empleado no existe") })
     void deleteEmployee(@PathVariable Long id) {
         repository.deleteById(id);
     }
